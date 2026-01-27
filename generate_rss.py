@@ -1,4 +1,5 @@
 import os
+import time
 import requests
 from feedgen.feed import FeedGenerator
 from datetime import datetime
@@ -86,22 +87,29 @@ def main():
         author_id = author["authorId"]
         print(f"Generating RSS for {name}...")
         
-        papers = fetch_papers(author_id)
+        try:
+            papers = fetch_papers(author_id)
+            
+            # Your sorting logic here
+            papers.sort(
+                key=lambda x: x.get("publicationDate") or "0000-00-00", 
+                reverse=True
+            )
 
-        # --- SORTING LOGIC START ---
-        # Sort papers by publicationDate descending (newest first).
-        # We use a fallback '0000-00-00' for papers without a date.
-        papers.sort(
-            key=lambda x: x.get("publicationDate") or "0000-00-00", 
-            reverse=True
-        )
-        # --- SORTING LOGIC END ---
-
-        fg = create_rss(name, author_id, papers)
-        filename = f"{sanitize_filename(name)}.xml"
-        filepath = os.path.join(OUTPUT_DIR, filename)
-        fg.rss_file(filepath)
-        
+            fg = create_rss(name, author_id, papers)
+            filename = f"{sanitize_filename(name)}.xml"
+            filepath = os.path.join(OUTPUT_DIR, filename)
+            fg.rss_file(filepath)
+            
+            # --- RATE LIMIT FIX ---
+            print(f"Successfully generated {name}. Waiting 3 seconds...")
+            time.sleep(3) # This prevents the 429 error
+            # ----------------------
+            
+        except Exception as e:
+            print(f"Error fetching {name}: {e}")
+            continue # Move to the next author even if one fails
+            
     print("Done! RSS feeds generated.")
 
 if __name__ == "__main__":

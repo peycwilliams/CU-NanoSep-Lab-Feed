@@ -48,7 +48,7 @@ def sanitize_filename(name):
 def create_rss(author_name, author_id, papers):
     fg = FeedGenerator()
     fg.id(f"https://www.semanticscholar.org/author/{author_id}")
-    fg.title(f"Papers by {author_name}")
+    fg.title(f"{author_name}")
     fg.link(
         href=f"https://www.semanticscholar.org/author/{author_id}",
         rel="alternate"
@@ -80,19 +80,28 @@ def create_rss(author_name, author_id, papers):
 
 def main():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-
+    
     for author in AUTHORS:
         name = author["name"]
         author_id = author["authorId"]
-
         print(f"Generating RSS for {name}...")
+        
         papers = fetch_papers(author_id)
-        fg = create_rss(name, author_id, papers)
 
+        # --- SORTING LOGIC START ---
+        # Sort papers by publicationDate descending (newest first).
+        # We use a fallback '0000-00-00' for papers without a date.
+        papers.sort(
+            key=lambda x: x.get("publicationDate") or "0000-00-00", 
+            reverse=True
+        )
+        # --- SORTING LOGIC END ---
+
+        fg = create_rss(name, author_id, papers)
         filename = f"{sanitize_filename(name)}.xml"
         filepath = os.path.join(OUTPUT_DIR, filename)
         fg.rss_file(filepath)
-
+        
     print("Done! RSS feeds generated.")
 
 if __name__ == "__main__":

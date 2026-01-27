@@ -1,13 +1,15 @@
 name: Update Semantic Scholar RSS Feeds
 
+# Trigger: scheduled and manual
 on:
   schedule:
-    # Runs every day at 12:00 PM UTC
-    - cron: "0 12 * * *"
-  workflow_dispatch: # allows manual runs from GitHub UI
+    # Runs every day at 8:00 AM Mountain Time (15:00 UTC)
+    - cron: "0 15 * * *"
+  workflow_dispatch:  # <-- enables manual runs
 
 jobs:
   update-rss:
+    name: Generate and Push RSS Feeds
     runs-on: ubuntu-latest
 
     steps:
@@ -25,8 +27,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Generate RSS feeds
-        run: |
-          python generate_rss.py
+        run: python generate_rss.py
 
       - name: Commit and push changes
         run: |
